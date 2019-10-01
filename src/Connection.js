@@ -36,7 +36,7 @@ var Connection = /** @class */ (function () {
         ]).then(function (connectionServices) {
             _this.connectionServices = connectionServices;
             webSocketConnection.on("message", function (data) {
-                var message = new Message_1.Message(JSON.parse(data.utf8Data), globalServices, connectionServices, __spreadArrays(messageServiceProviders), actions, logger.tag("Message"));
+                new Message_1.Message(JSON.parse(data.utf8Data), globalServices, connectionServices, __spreadArrays(messageServiceProviders), actions, logger.tag("Message"));
             });
         });
     }
