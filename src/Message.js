@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var Action_1 = require("./Action");
 var GlobalService_1 = require("./service/GlobalService");
 var ConnectionService_1 = require("./service/ConnectionService");
 var Service_1 = require("./service/Service");
@@ -25,10 +26,50 @@ var Message = /** @class */ (function () {
         this.exposeAsService("messagePayload", this.payload);
         this.exposeAsService("actionName", this.actionName);
         this.exposeAsService("tag", this.tag);
-        messageServiceProviders.push(new MessageService_1.MessageServiceProvider("reply", ["actionName", "tag"], function (_, getConnectionServicePayload, getMessageServicePayload) {
+        this.exposeAsService("addAction", function (action) {
+            _this.actions.push(action);
+        });
+        messageServiceProviders.push(new MessageService_1.MessageServiceProvider("query", ["addAction", "tag"], function (getGlobalServicePayload, getConnectionServicePayload, getMessageServicePayload) {
+            return Promise.resolve(function (connection, action, payload) {
+                return new Promise(function (resolve, reject) {
+                    getMessageServicePayload("addAction")(new Action_1.Action(action + "/reply", function (getGlobalServicePayload, getConnectionServicePayload, getMessageServicePayload) {
+                        var replyPayload = getMessageServicePayload("messagePayload");
+                        if (replyPayload.success) {
+                            resolve(replyPayload.data);
+                        }
+                        else if (replyPayload.success === false) {
+                            reject(replyPayload.error);
+                        }
+                        resolve(replyPayload);
+                    }));
+                    getConnectionServicePayload("send")(action, payload, getMessageServicePayload("tag"), connection);
+                });
+            });
+        }));
+        messageServiceProviders.push(new MessageService_1.MessageServiceProvider("reply", ["actionName", "tag"], function (getGlobalServicePayload, getConnectionServicePayload, getMessageServicePayload) {
             return Promise.resolve(function (payload) {
-                getConnectionServicePayload("send")(getMessageServicePayload("actionName") +
-                    "/reply", payload, getMessageServicePayload("tag"));
+                var reply = function (payload) {
+                    getConnectionServicePayload("send")(getMessageServicePayload("actionName") +
+                        "/reply", payload, getMessageServicePayload("tag"));
+                };
+                if (payload instanceof Promise) {
+                    payload
+                        .then(function (data) {
+                        reply({
+                            success: true,
+                            data: data
+                        });
+                    })
+                        .catch(function (error) {
+                        reply({
+                            success: false,
+                            error: error
+                        });
+                    });
+                }
+                else {
+                    reply(payload);
+                }
             });
         }));
         Service_1.loadServiceScope(messageServiceProviders, this.messageServiceLogger, [globalServices, connectionServices]).then(function (messageServices) {
@@ -42,7 +83,9 @@ var Message = /** @class */ (function () {
         });
     }
     Message.prototype.exposeAsService = function (name, payload) {
-        this.messageServiceProviders.push(new MessageService_1.MessageServiceProvider(name, [], function () { return Promise.resolve(payload); }));
+        this.messageServiceProviders.push(new MessageService_1.MessageServiceProvider(name, [], function () {
+            return Promise.resolve(payload);
+        }));
     };
     return Message;
 }());

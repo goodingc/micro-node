@@ -79,10 +79,6 @@ const loadServiceScope = <
                         .generate(loadedServices, outOfScopeServices)
                         .then(loadedService => {
                             loadedServices.push(loadedService);
-                            logger.success(
-                                "Loaded",
-                                serviceProviderToLoad.name
-                            );
                         })
                         .catch(error => {
                             logger.error(

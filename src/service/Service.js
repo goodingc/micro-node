@@ -55,7 +55,6 @@ var loadServiceScope = function (scopedServiceProviders, logger, outOfScopeServi
                 .generate(loadedServices, outOfScopeServices)
                 .then(function (loadedService) {
                 loadedServices.push(loadedService);
-                logger.success("Loaded", serviceProviderToLoad.name);
             })
                 .catch(function (error) {
                 logger.error("Failed to load", serviceProviderToLoad.name, error);

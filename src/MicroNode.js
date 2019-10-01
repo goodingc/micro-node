@@ -13,6 +13,7 @@ var http_1 = require("http");
 var Connection_1 = require("./Connection");
 var GlobalService_1 = require("./service/GlobalService");
 var Service_1 = require("./service/Service");
+var nodeConnectServiceProviderBundle_1 = require("./internalServiceProviderBundles/nodeConnectServiceProviderBundle");
 var MicroNode = /** @class */ (function () {
     function MicroNode(port, actions, globalServiceProviders, connectionServiceProviders, messageServiceProviders) {
         var _this = this;
@@ -31,6 +32,7 @@ var MicroNode = /** @class */ (function () {
         globalServiceProviders.push(new GlobalService_1.GlobalServiceProvider("localLogger", [], function () {
             return Promise.resolve(_this.globalServiceLogger);
         }));
+        nodeConnectServiceProviderBundle_1.nodeConnectServiceProviderBundle.apply(globalServiceProviders, connectionServiceProviders, messageServiceProviders);
         this.globalServiceLogger.info("Loading");
         Service_1.loadServiceScope(globalServiceProviders, this.globalServiceLogger).then(function (globalServices) {
             _this.globalServices = globalServices;
@@ -48,7 +50,7 @@ var MicroNode = /** @class */ (function () {
             });
             _this.webSocketServer.on("request", function (request) {
                 var webSocketConnection = request.accept();
-                _this.connections.push(new Connection_1.Connection(webSocketConnection, globalServices, __spreadArrays(connectionServiceProviders), messageServiceProviders, actions, _this.rootLogger.tag("Connection")));
+                _this.connections.push(new Connection_1.Connection(webSocketConnection, globalServices, __spreadArrays(connectionServiceProviders), messageServiceProviders, __spreadArrays(actions), _this.rootLogger.tag("Connection")));
             });
         });
     }

@@ -24,7 +24,6 @@ class Connection {
         public actions: Action[],
         public logger: LocalLogger
     ) {
-
         this.connectionServiceLogger = logger.tag("Connection Services");
 
         this.exposeAsService<LocalLogger>(
@@ -34,8 +33,13 @@ class Connection {
 
         this.exposeAsService<SendFunction>(
             "send",
-            (action: string, payload: any, tag: string) => {
-                webSocketConnection.send(
+            (
+                action: string,
+                payload: any,
+                tag: string,
+                altConnection?: WebSocketConnection
+            ) => {
+                (altConnection || webSocketConnection).send(
                     JSON.stringify({
                         action,
                         payload,
@@ -44,6 +48,10 @@ class Connection {
                 );
             }
         );
+
+        this.exposeAsService("addAction", (action: Action) => {
+            this.actions.push(action);
+        });
 
         this.connectionServiceLogger.info("Loading");
 
@@ -55,7 +63,7 @@ class Connection {
         ]).then(connectionServices => {
             this.connectionServices = connectionServices;
             webSocketConnection.on("message", data => {
-                const message: Message = new Message(
+                new Message(
                     JSON.parse(data.utf8Data),
                     globalServices,
                     connectionServices,
@@ -69,7 +77,9 @@ class Connection {
 
     exposeAsService<P>(name: string, payload: P): void {
         this.connectionServiceProviders.push(
-            new ConnectionServiceProvider<P>(name, [], () => Promise.resolve(payload))
+            new ConnectionServiceProvider<P>(name, [], () =>
+                Promise.resolve(payload)
+            )
         );
     }
 }

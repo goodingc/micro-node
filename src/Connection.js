@@ -20,12 +20,15 @@ var Connection = /** @class */ (function () {
         this.logger = logger;
         this.connectionServiceLogger = logger.tag("Connection Services");
         this.exposeAsService("localLogger", this.connectionServiceLogger);
-        this.exposeAsService("send", function (action, payload, tag) {
-            webSocketConnection.send(JSON.stringify({
+        this.exposeAsService("send", function (action, payload, tag, altConnection) {
+            (altConnection || webSocketConnection).send(JSON.stringify({
                 action: action,
                 payload: payload,
                 tag: tag
             }));
+        });
+        this.exposeAsService("addAction", function (action) {
+            _this.actions.push(action);
         });
         this.connectionServiceLogger.info("Loading");
         Service_1.loadServiceScope(connectionServiceProviders, this.connectionServiceLogger, [
@@ -38,7 +41,9 @@ var Connection = /** @class */ (function () {
         });
     }
     Connection.prototype.exposeAsService = function (name, payload) {
-        this.connectionServiceProviders.push(new ConnectionService_1.ConnectionServiceProvider(name, [], function () { return Promise.resolve(payload); }));
+        this.connectionServiceProviders.push(new ConnectionService_1.ConnectionServiceProvider(name, [], function () {
+            return Promise.resolve(payload);
+        }));
     };
     return Connection;
 }());

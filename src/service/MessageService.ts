@@ -23,7 +23,7 @@ class MessageServiceProvider<P> extends ServiceProvider<P, MessageService<P>> {
         generator: (
             getGlobalServicePayload: GlobalServicePayloadResolver,
             getConnectionServicePayload: ConnectionServicePayloadResolver,
-            getActionServicePayload: MessageServicePayloadResolver
+            getMessageServicePayload: MessageServicePayloadResolver
         ) => Promise<P>
     ) {
         super(name, requiredPeerServices, generator);

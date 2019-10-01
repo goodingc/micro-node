@@ -10,7 +10,7 @@ import { GlobalService, GlobalServiceProvider } from "./service/GlobalService";
 import { ConnectionServiceProvider } from "./service/ConnectionService";
 import { loadServiceScope } from "./service/Service";
 import { MessageServiceProvider } from "./service/MessageService";
-
+import { nodeConnectServiceProviderBundle } from "./internalServiceProviderBundles/nodeConnectServiceProviderBundle";
 
 class MicroNode {
     rootLogger: LocalLogger;
@@ -19,14 +19,14 @@ class MicroNode {
     webSocketServer: WebSocketServer;
     connections: Connection[] = [];
 
-    globalServices: GlobalService<any>[]
+    globalServices: GlobalService<any>[];
 
     constructor(
         public port: number = 8000,
         public actions: Action[],
         public globalServiceProviders: GlobalServiceProvider<any>[],
         public connectionServiceProviders: ConnectionServiceProvider<any>[],
-        public messageServiceProviders: MessageServiceProvider<any>[],
+        public messageServiceProviders: MessageServiceProvider<any>[]
     ) {
         //Setting up loggers
         this.rootLogger = new LocalLogger();
@@ -40,9 +40,18 @@ class MicroNode {
             )
         );
 
+        nodeConnectServiceProviderBundle.apply(
+            globalServiceProviders,
+            connectionServiceProviders,
+            messageServiceProviders
+        );
+
         this.globalServiceLogger.info("Loading");
 
-        loadServiceScope<GlobalService<any>, GlobalServiceProvider<any>>(globalServiceProviders ,this.globalServiceLogger).then(globalServices => {
+        loadServiceScope<GlobalService<any>, GlobalServiceProvider<any>>(
+            globalServiceProviders,
+            this.globalServiceLogger
+        ).then(globalServices => {
             this.globalServices = globalServices;
             this.serverLogger.info("Starting");
             const httpServer: HTTPServer = new HTTPServer((req, res) => {
@@ -66,15 +75,15 @@ class MicroNode {
                         globalServices,
                         [...connectionServiceProviders],
                         messageServiceProviders,
-                        actions,
+                        [...actions],
                         this.rootLogger.tag("Connection")
                     )
                 );
             });
-        })
+        });
     }
 
-    exposeAsService
+    exposeAsService;
 }
 
 export { MicroNode };

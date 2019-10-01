@@ -1,4 +1,5 @@
 import { LocalLogger } from "./LocalLogger";
+import { connection as WebSocketConnection } from "websocket";
 
 import { Action } from "./Action";
 import { GlobalService, GlobalServiceProvider } from "./service/GlobalService";
@@ -44,6 +45,67 @@ class Message {
         this.exposeAsService<any>("messagePayload", this.payload);
         this.exposeAsService<string>("actionName", this.actionName);
         this.exposeAsService<string>("tag", this.tag);
+        this.exposeAsService<(action: Action) => void>(
+            "addAction",
+            (action: Action) => {
+                this.actions.push(action);
+            }
+        );
+
+        messageServiceProviders.push(
+            new MessageServiceProvider<any>(
+                "query",
+                ["addAction", "tag"],
+                (
+                    getGlobalServicePayload,
+                    getConnectionServicePayload,
+                    getMessageServicePayload
+                ) => {
+                    return Promise.resolve(
+                        (
+                            connection: WebSocketConnection,
+                            action: string,
+                            payload: any
+                        ) => {
+                            return new Promise((resolve, reject) => {
+                                getMessageServicePayload<
+                                    (action: Action) => void
+                                >("addAction")(
+                                    new Action(
+                                        action + "/reply",
+                                        (
+                                            getGlobalServicePayload,
+                                            getConnectionServicePayload,
+                                            getMessageServicePayload
+                                        ) => {
+                                            const replyPayload = getMessageServicePayload<
+                                                any
+                                            >("messagePayload");
+                                            if (replyPayload.success) {
+                                                resolve(replyPayload.data);
+                                            } else if (
+                                                replyPayload.success === false
+                                            ) {
+                                                reject(replyPayload.error);
+                                            }
+                                            resolve(replyPayload);
+                                        }
+                                    )
+                                );
+                                getConnectionServicePayload<SendFunction>(
+                                    "send"
+                                )(
+                                    action,
+                                    payload,
+                                    getMessageServicePayload<string>("tag"),
+                                    connection
+                                );
+                            });
+                        }
+                    );
+                }
+            )
+        );
 
         messageServiceProviders.push(
             new MessageServiceProvider<ReplyFunction>(
@@ -54,13 +116,32 @@ class Message {
                     getConnectionServicePayload,
                     getMessageServicePayload
                 ) => {
-                    return Promise.resolve((payload: any) => {
-                        getConnectionServicePayload<SendFunction>("send")(
-                            getMessageServicePayload<string>("actionName") +
-                                "/reply",
-                            payload,
-                            getMessageServicePayload<string>("tag")
-                        );
+                    return Promise.resolve((payload: Promise<any> | any) => {
+                        const reply = (payload: any) => {
+                            getConnectionServicePayload<SendFunction>("send")(
+                                getMessageServicePayload<string>("actionName") +
+                                    "/reply",
+                                payload,
+                                getMessageServicePayload<string>("tag")
+                            );
+                        };
+                        if (payload instanceof Promise) {
+                            payload
+                                .then(data => {
+                                    reply({
+                                        success: true,
+                                        data
+                                    });
+                                })
+                                .catch(error => {
+                                    reply({
+                                        success: false,
+                                        error
+                                    });
+                                });
+                        } else {
+                            reply(payload);
+                        }
                     });
                 }
             )
