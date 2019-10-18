@@ -11,6 +11,8 @@ import { ConnectionServiceProvider } from "./service/ConnectionService";
 import { loadServiceScope } from "./service/Service";
 import { MessageServiceProvider } from "./service/MessageService";
 import { nodeConnectServiceProviderBundle } from "./internalServiceProviderBundles/nodeConnectServiceProviderBundle";
+import { ServiceProviderBundle } from "./ServiceProviderBundle";
+import { requireInputsServiceProviderBundle } from "./internalServiceProviderBundles/requireInputsServiceProviderBundle";
 
 class MicroNode {
     rootLogger: LocalLogger;
@@ -40,11 +42,16 @@ class MicroNode {
             )
         );
 
-        nodeConnectServiceProviderBundle.apply(
-            globalServiceProviders,
-            connectionServiceProviders,
-            messageServiceProviders
-        );
+        [
+            nodeConnectServiceProviderBundle,
+            requireInputsServiceProviderBundle
+        ].forEach((serviceProviderBundle: ServiceProviderBundle) => {
+            serviceProviderBundle.apply(
+                globalServiceProviders,
+                connectionServiceProviders,
+                messageServiceProviders
+            );
+        });
 
         this.globalServiceLogger.info("Loading");
 
@@ -83,7 +90,7 @@ class MicroNode {
         });
     }
 
-    exposeAsService;
+
 }
 
 export { MicroNode };

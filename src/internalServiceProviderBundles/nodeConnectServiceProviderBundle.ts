@@ -3,8 +3,8 @@ import {
     connection as WebSocketConnection,
     IMessage as WebSocketMessage
 } from "websocket";
-import { GlobalServiceProvider } from "..";
-import { MessageServiceProvider } from "..";
+import { GlobalServiceProvider } from "../service/GlobalService";
+import { MessageServiceProvider } from "../service/MessageService";
 import { ServiceProviderBundle } from "../ServiceProviderBundle";
 
 class NodeConnector {
@@ -45,16 +45,13 @@ class NodeConnector {
         this.webSocketClient.connect(`ws://${address}:${port}/`);
     }
 
-    static connect(
-        address: string,
-        port: number
-    ): Promise<NodeConnector> {
+    static connect(address: string, port: number): Promise<NodeConnector> {
         return new Promise<NodeConnector>((resolve, reject) => {
             const nodeConnector = new NodeConnector(
                 address,
                 port,
                 () => {
-                    resolve(nodeConnector)
+                    resolve(nodeConnector);
                 },
                 reject
             );
@@ -108,8 +105,6 @@ const sendToNodeServiceProvider = new MessageServiceProvider<
                 handlers: Handler[]
             ): void => {
                 const tag = getMessageServicePayload<string>("tag");
-
-                console.log("in service");
 
                 nodeConnector.tagFilters.push({
                     tag,

@@ -14,6 +14,7 @@ var Connection_1 = require("./Connection");
 var GlobalService_1 = require("./service/GlobalService");
 var Service_1 = require("./service/Service");
 var nodeConnectServiceProviderBundle_1 = require("./internalServiceProviderBundles/nodeConnectServiceProviderBundle");
+var requireInputsServiceProviderBundle_1 = require("./internalServiceProviderBundles/requireInputsServiceProviderBundle");
 var MicroNode = /** @class */ (function () {
     function MicroNode(port, actions, globalServiceProviders, connectionServiceProviders, messageServiceProviders) {
         var _this = this;
@@ -32,7 +33,12 @@ var MicroNode = /** @class */ (function () {
         globalServiceProviders.push(new GlobalService_1.GlobalServiceProvider("localLogger", [], function () {
             return Promise.resolve(_this.globalServiceLogger);
         }));
-        nodeConnectServiceProviderBundle_1.nodeConnectServiceProviderBundle.apply(globalServiceProviders, connectionServiceProviders, messageServiceProviders);
+        [
+            nodeConnectServiceProviderBundle_1.nodeConnectServiceProviderBundle,
+            requireInputsServiceProviderBundle_1.requireInputsServiceProviderBundle
+        ].forEach(function (serviceProviderBundle) {
+            serviceProviderBundle.apply(globalServiceProviders, connectionServiceProviders, messageServiceProviders);
+        });
         this.globalServiceLogger.info("Loading");
         Service_1.loadServiceScope(globalServiceProviders, this.globalServiceLogger).then(function (globalServices) {
             _this.globalServices = globalServices;

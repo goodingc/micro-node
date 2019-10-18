@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var websocket_1 = require("websocket");
-var __1 = require("..");
-var __2 = require("..");
+var GlobalService_1 = require("../service/GlobalService");
+var MessageService_1 = require("../service/MessageService");
 var ServiceProviderBundle_1 = require("../ServiceProviderBundle");
 var NodeConnector = /** @class */ (function () {
     function NodeConnector(address, port, onConnect, onConnectFail) {
@@ -50,7 +50,7 @@ var NodeConnector = /** @class */ (function () {
     };
     return NodeConnector;
 }());
-var sendToNodeServiceProvider = new __2.MessageServiceProvider("sendToNode", ["tag"], function (getGlobalServicePayload, getConnectionServicePayload, getMessageServicePayload) {
+var sendToNodeServiceProvider = new MessageService_1.MessageServiceProvider("sendToNode", ["tag"], function (getGlobalServicePayload, getConnectionServicePayload, getMessageServicePayload) {
     return Promise.resolve(function (nodeConnector, action, payload, handlers) {
         var tag = getMessageServicePayload("tag");
         console.log("in service");
@@ -61,7 +61,7 @@ var sendToNodeServiceProvider = new __2.MessageServiceProvider("sendToNode", ["t
         nodeConnector.send(action, payload, tag);
     });
 });
-var connectToNodeServiceProvider = new __1.GlobalServiceProvider("connectToNode", [], function () {
+var connectToNodeServiceProvider = new GlobalService_1.GlobalServiceProvider("connectToNode", [], function () {
     return Promise.resolve(NodeConnector.connect);
 });
 var nodeConnectServiceProviderBundle = new ServiceProviderBundle_1.ServiceProviderBundle([connectToNodeServiceProvider], [], [sendToNodeServiceProvider]);
