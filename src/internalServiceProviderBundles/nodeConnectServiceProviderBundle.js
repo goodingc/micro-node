@@ -53,7 +53,6 @@ var NodeConnector = /** @class */ (function () {
 var sendToNodeServiceProvider = new MessageService_1.MessageServiceProvider("sendToNode", ["tag"], function (getGlobalServicePayload, getConnectionServicePayload, getMessageServicePayload) {
     return Promise.resolve(function (nodeConnector, action, payload, handlers) {
         var tag = getMessageServicePayload("tag");
-        console.log("in service");
         nodeConnector.tagFilters.push({
             tag: tag,
             handlers: handlers
